@@ -28,6 +28,11 @@ galaxy_info:
     - cloud
     - load-balancing
     - aws
+    - amazon
+    - digitalocean
+
+  cloud_platforms:
+    - amazon
     - digitalocean
 
 dependencies: []
