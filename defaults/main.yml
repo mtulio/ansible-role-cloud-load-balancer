@@ -1,2 +1,3 @@
 ---
 # defaults file for cloud_load_balancer
+cloud_loadbalancers: []
