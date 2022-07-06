@@ -25,13 +25,13 @@
       vpc-id: "{{ vpc_id }}"
       "tag:Name": "{{ item }}"
   with_items: "{{ lb.subnets_names }}"
-  when: lb.subnets_discovery 
+  when: lb.subnets_discovery
   register: subnet_facts
 
 - name: Load Balancer | AWS | Set empty subnet IDs
   set_fact:
     subnet_ids: []
-  when: lb.subnets_discovery 
+  when: lb.subnets_discovery
 
 - name: Load Balancer | AWS | Mount the subnetIds from discovered subnets
   set_fact:

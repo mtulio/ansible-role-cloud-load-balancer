@@ -8,7 +8,7 @@
   register: vpc_info
 
 - name: Target Group | AWS | Show VPC Info
-  debug: 
+  debug:
     var: vpc_info
 
 - name: Target Group | AWS | Set discovered VPC ID
