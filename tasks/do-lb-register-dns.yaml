@@ -1,7 +1,4 @@
 ---
-
-- debug: var=lb_out
-
 - name: Resource value was not defined, setting LB recently created
   set_fact:
     res_value: "{{ lb_ip }}"
@@ -18,7 +15,9 @@
     domain: "{{ res.domain }}"
   register: reg_dns_zone_records
 
-- debug: var=reg_dns_zone_records
+- name: Show reg_dns_zone_records
+  debug:
+    var: reg_dns_zone_records
 
 - name: Create empty RR list
   set_fact:
@@ -34,7 +33,9 @@
   vars:
     q_rr: "[?name=='{{ record.name }}']"
 
-- debug: var=rr_to_add
+- name: Show rr_to_add
+  debug:
+    var: rr_to_add
 
 - name: LoadBalancer | DO | Callback Register | DNS | Create RR
   community.digitalocean.digital_ocean_domain_record:
