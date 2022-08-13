@@ -28,14 +28,20 @@
   when: lb.subnets_discovery
   register: subnet_facts
 
-- name: Load Balancer | AWS | Set empty subnet IDs
+- name: Load Balancer | AWS | SubnetIDs check
+  ansible.builtin.assert:
+    that:
+      - subnet_facts.results|length > 0
+    fail_msg: "'subnet_ids' is empty. No subnet found with names: '{{ lb.subnets_names }}' on VPC '{{ vpc_id }}'"
+
+- name: Load Balancer | AWS | Reset subnet ID List
   set_fact:
     subnet_ids: []
   when: lb.subnets_discovery
 
 - name: Load Balancer | AWS | Mount the subnetIds from discovered subnets
   set_fact:
-    subnet_ids: "{{ subnet_ids + [item] }}"
+    subnet_ids: "{{ subnet_ids|d([]) + [item] }}"
   with_items: "{{ subnet_facts.results | json_query(rt_query) }}"
   vars:
     rt_query: "[].subnets[?vpc_id=='{{ vpc_id }}'].subnet_id"
@@ -96,6 +102,7 @@
 - name: Load Balancer | AWS | Show resources created
   debug:
     var: lb_out
+
 - name: Load Balancer | AWS | Show DNS records created
   debug:
     var: rec_out
