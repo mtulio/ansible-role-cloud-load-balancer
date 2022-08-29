@@ -1,0 +1,123 @@
+---
+
+- name: IONOS | Create/gather Datacenter
+  ionoscloudsdk.ionoscloud.datacenter:
+    name: "{{ lb.datacenter_name }}"
+    description: "{{ lb.datacenter_desc |d(omit) }}"
+    location: "{{ lb.region }}"
+  register: dc
+
+- name: IONOS | Datacenter show
+  debug:
+    var: dc
+
+- name: IONOS | Create/gather LAN listener
+  ionoscloudsdk.ionoscloud.lan:
+    datacenter: "{{ dc.datacenter.id }}"
+    name: "{{ lb.listener_lan_name }}"
+    state: present
+  register: lan_ln
+
+- name: IONOS | Lan Listener show
+  debug:
+    var: lan_ln
+
+- name: IONOS | Create/gather LAN Target
+  ionoscloudsdk.ionoscloud.lan:
+    datacenter: "{{ dc.datacenter.id }}"
+    name: "{{ lb.target_lan_name }}"
+    state: present
+  register: lan_tg
+
+- name: IONOS | Lan Listener show
+  debug:
+    var: lan_tg
+
+- ansible.builtin.set_fact:
+    ipblock: {}
+    ips: []
+
+- name: IONOS | Get Public IP Blocks
+  ionoscloudsdk.ionoscloud.ipblock:
+    name: "{{ lb.ip_block_name }}"
+  register: ipblock
+  when: lb.scheme == 'internet-facing'
+
+- name: IONOS | NLB show
+  debug:
+    var: ipblock
+  when: lb.scheme == 'internet-facing'
+
+- name: IONOS | IP Show
+  debug:
+    var: ipblock.ipblock.properties.ips[lb.ip_block_index]
+  when: lb.scheme == 'internet-facing'
+
+- name: IONOS | NLB show
+  set_fact:
+    ips: "{{ ipblock.ipblock.properties.ips[lb.ip_block_index] }}"
+  when: lb.scheme == 'internet-facing'
+
+# - name: IONOS | NLB show
+#   ansible.builtin.set_fact:
+#     ips: "{{ lb.ips }}"
+#   when:
+#     - lb.scheme == 'private'
+#     - lb.ips is defined
+
+- name: IONOS | NLB show
+  ansible.builtin.set_fact:
+    ips: "{{ lb.ips }}"
+  when:
+    - lb.scheme == 'private'
+    - lb.ips is defined
+
+# - name: IONOS | IPs show
+#   debug:
+#     var: ips|d('')
+
+- name: IONOS | ips show
+  debug:
+    var: ips
+
+- name: "IONOS | Create Network Load Balancer {{ lb.name }}"
+  ionoscloudsdk.ionoscloud.network_load_balancer:
+    datacenter_id: "{{ dc.datacenter.id }}"
+    name: "{{ lb.name }}"
+    listener_lan: "{{ lan_ln.lan.id }}"
+    target_lan: "{{ lan_tg.lan.id }}"
+    ips: "{{ ips | d(omit) }}"
+    lb_private_ips: "{{ lb.lb_private_ips  | d(omit) }}"
+    # lb_private_ips: "{{ lb_private_ips | d(omit) }}"
+    wait: true
+  register: nlb_resp_pub
+  # when: lb.scheme == 'internet-facing'
+
+# - name: "IONOS | Create Network Load Balancer {{ lb.name }}"
+#   ionoscloudsdk.ionoscloud.network_load_balancer:
+#     datacenter_id: "{{ dc.datacenter.id }}"
+#     name: "{{ lb.name }}"
+#     listener_lan: "{{ lan_ln.lan.id }}"
+#     target_lan: "{{ lan_tg.lan.id }}"
+#     #ips: "{{ ips | d(omit) }}"
+#     lb_private_ips: "{{ lb_private_ips | d(omit) }}"
+#     wait: true
+#   register: nlb_resp_pvt
+#   when: lb.scheme == 'private'
+
+- ansible.builtin.set_fact:
+    nlb: "{{ nlb_resp_pub }}"
+  # when: lb.scheme == 'internet-facing'
+
+# - ansible.builtin.set_fact:
+#     nlb: "{{ nlb_resp_pvt }}"
+#   when: lb.scheme == 'private'
+
+- name: IONOS | NLB show
+  debug:
+    var: nlb
+
+- include: ionos-target.yaml
+  with_items: "{{ lb.targets }}"
+  loop_control:
+    loop_var: target

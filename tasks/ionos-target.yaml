@@ -1,0 +1,25 @@
+---
+- ansible.builtin.set_fact:
+    listener_ip: "{{ ipblock.ipblock.properties.ips[target.listener_ip_block_index] }}"
+  when: lb.scheme == 'internet-facing'
+
+- ansible.builtin.set_fact:
+    listener_ip: "{{ lb.ips[0] }}"
+  when: lb.scheme == 'private'
+
+- name: Create Network Load Balancer Forwarding Rule
+  ionoscloudsdk.ionoscloud.network_load_balancer_rule:
+    name: "{{ target.name }}"
+    algorithm: "{{ target.algorithm }}"
+    protocol: "{{ target.protocol }}"
+    listener_ip: "{{ listener_ip | d(lb.ips) }}"
+    listener_port: "{{ target.listener_port }}"
+    targets: "{{ target.targets }}"
+    datacenter_id: "{{ dc.datacenter.id }}"
+    network_load_balancer_id: "{{ nlb.network_load_balancer.id }}"
+    wait: true
+  register: nlb_fw
+
+- name: IONOS | NLB show
+  debug:
+    var: nlb_fw
