@@ -1,13 +1,13 @@
 ---
 
 - name: Setup Load Balancer Targets
-  include: "{{ target.provider }}-target.yaml"
+  ansible.builtin.include_tasks: "{{ tg.provider }}-target.yaml"
   with_items: "{{ cloud_loadbalancer_targets | d([]) }}"
   loop_control:
-    loop_var: target
+    loop_var: tg
 
 - name: Setup Load Balancers
-  include: "{{ lb.provider }}-lb.yaml"
+  ansible.builtin.include_tasks: "{{ lb.provider }}-lb.yaml"
   with_items: "{{ cloud_loadbalancers | d([]) }}"
   loop_control:
     loop_var: lb

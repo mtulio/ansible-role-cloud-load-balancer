@@ -75,7 +75,7 @@
   when: lb_ip | length > 0
 
 - name: Load Balancer | DO | Callback register resources
-  include: "do-lb-register-{{ res.service }}.yaml"
+  include_tasks: "do-lb-register-{{ res.service }}.yaml"
   with_items: "{{ lb.register_resources | d([]) }}"
   loop_control:
     loop_var: res

@@ -3,21 +3,21 @@
 - name: Load Balancer | AWS | Discovery VPC by Name
   amazon.aws.ec2_vpc_net_info:
     filters:
-      "tag:Name": "{{ target.vpc_name }}"
-  when: target.vpc_name is defined
+      "tag:Name": "{{ lb.vpc_name }}"
+  when: lb.vpc_name is defined
   register: vpc_info
 
 - name: Load Balancer | AWS | Set VPC ID from discovery
-  set_fact:
+  ansible.builtin.set_fact:
     vpc_id: "{{ vpc_info.vpcs[0].vpc_id }}"
   when:
-    - target.vpc_name is defined
+    - lb.vpc_name is defined
     - vpc_info.vpcs|length > 0
 
 - name: Load Balancer | AWS | Set VPC ID from config
-  set_fact:
-    vpc_id: "{{ target.vpc_id }}"
-  when: target.vpc_id is defined
+  ansible.builtin.set_fact:
+    vpc_id: "{{ lb.vpc_id }}"
+  when: lb.vpc_id is defined
 
 - name: Load Balancer | AWS | Discovery subnet by names
   ec2_vpc_subnet_info:
@@ -35,12 +35,12 @@
     fail_msg: "'subnet_ids' is empty. No subnet found with names: '{{ lb.subnets_names }}' on VPC '{{ vpc_id }}'"
 
 - name: Load Balancer | AWS | Reset subnet ID List
-  set_fact:
+  ansible.builtin.set_fact:
     subnet_ids: []
   when: lb.subnets_discovery
 
 - name: Load Balancer | AWS | Mount the subnetIds from discovered subnets
-  set_fact:
+  ansible.builtin.set_fact:
     subnet_ids: "{{ subnet_ids|d([]) + [item] }}"
   with_items: "{{ subnet_facts.results | json_query(rt_query) }}"
   vars:
@@ -82,17 +82,17 @@
   register: rec_out
 
 - name: Load Balancer | AWS | Save config | Name
-  set_fact:
+  ansible.builtin.set_fact:
     cluster_state: "{% set x=cluster_state.loadbalancers.__setitem__(lb.openshift_id+'_name', lb_out.load_balancer_name) %}{{ cluster_state }}"
   when: lb.openshift_id is defined
 
 - name: Load Balancer | AWS | Save config | Provider's DNS record
-  set_fact:
+  ansible.builtin.set_fact:
     cluster_state: "{% set x=cluster_state.loadbalancers.__setitem__(lb.openshift_id+'_dns_provider', lb_out.dns_name) %}{{ cluster_state }}"
   when: lb.openshift_id is defined
 
 - name: Load Balancer | AWS | Set config | Custom DNS record
-  set_fact:
+  ansible.builtin.set_fact:
     cluster_state: "{% set x=cluster_state.loadbalancers.__setitem__(lb.openshift_id+'_dns', lb.register_dns[0].record) %}{{ cluster_state }}"
   when:
     - lb.openshift_id is defined
@@ -100,9 +100,11 @@
     - lb.register_dns | length > 0
 
 - name: Load Balancer | AWS | Show resources created
-  debug:
+  ansible.builtin.debug:
     var: lb_out
+  when: debug|d(false)
 
 - name: Load Balancer | AWS | Show DNS records created
-  debug:
+  ansible.builtin.debug:
     var: rec_out
+  when: debug|d(false)
