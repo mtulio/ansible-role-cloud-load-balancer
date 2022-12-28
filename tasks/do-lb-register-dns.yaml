@@ -1,6 +1,6 @@
 ---
 - name: Resource value was not defined, setting LB recently created
-  set_fact:
+  ansible.builtin.set_fact:
     res_value: "{{ lb_ip }}"
   when: res.value is not defined
 
@@ -16,15 +16,15 @@
   register: reg_dns_zone_records
 
 - name: Show reg_dns_zone_records
-  debug:
+  ansible.builtin.debug:
     var: reg_dns_zone_records
 
 - name: Create empty RR list
-  set_fact:
+  ansible.builtin.set_fact:
     rr_to_add: []
 
 - name: Discovery RR to add
-  set_fact:
+  ansible.builtin.set_fact:
     rr_to_add: "{{ rr_to_add + [record] }}"
   when: reg_dns_zone_records.data.records | community.general.json_query(q_rr) | length <= 0
   with_items: "{{ res.records }}"
@@ -34,10 +34,10 @@
     q_rr: "[?name=='{{ record.name }}']"
 
 - name: Show rr_to_add
-  debug:
+  ansible.builtin.debug:
     var: rr_to_add
 
-- name: LoadBalancer | DO | Callback Register | DNS | Create RR
+- name: LoadBalancer | DO | Callback Register | DNS | Create RR # noqa: args[module]
   community.digitalocean.digital_ocean_domain_record:
     state: present
     domain: "{{ res.domain }}"
