@@ -1,4 +1,4 @@
-galaxy_info:
+galaxy_info: # noqa: schema[meta]
   role_name: cloud_load_balancer
   author: mtulio
   namespace: mtulio

@@ -20,7 +20,7 @@
   when: lb.vpc_id is defined
 
 - name: Load Balancer | AWS | Discovery subnet by names
-  ec2_vpc_subnet_info:
+  amazon.aws.ec2_vpc_subnet_info:
     filters:
       vpc-id: "{{ vpc_id }}"
       "tag:Name": "{{ item }}"
@@ -41,7 +41,7 @@
 
 - name: Load Balancer | AWS | Mount the subnetIds from discovered subnets
   ansible.builtin.set_fact:
-    subnet_ids: "{{ subnet_ids|d([]) + [item] }}"
+    subnet_ids: "{{ subnet_ids | d([]) + [item] }}"
   with_items: "{{ subnet_facts.results | json_query(rt_query) }}"
   vars:
     rt_query: "[].subnets[?vpc_id=='{{ vpc_id }}'].subnet_id"
@@ -49,19 +49,19 @@
 
 - name: Load Balancer | AWS | Create NLB
   community.aws.elb_network_lb:
+    state: present
     name: "{{ lb.name }}"
     scheme: "{{ lb.scheme }}"
-    subnet_mappings: "{{ lb.subnet_mappings |d(omit) }}"
+    subnet_mappings: "{{ lb.subnet_mappings | d(omit) }}"
     subnets: "{{ subnet_ids | d(omit) }}"
-    listeners: "{{ lb.listeners |d(omit) }}"
-    purge_listeners: "{{ lb.purge_listeners |d('no') }}"
-    cross_zone_load_balancing: "{{ lb.cross_zone_load_balancing |d(omit) }}"
-    deletion_protection: "{{ lb.deletion_protection |d(omit) }}"
-    ip_address_type: "{{ lb.ip_address_type |d(omit) }}"
-    tags: "{{ lb.tags |d(omit) }}"
-    purge_tags: "{{ lb.purge_tags |d('no') }}"
-    wait: "{{ lb.wait |d('no') }}"
-    state: present
+    listeners: "{{ lb.listeners | d(omit) }}"
+    purge_listeners: "{{ lb.purge_listeners | d('no') }}"
+    cross_zone_load_balancing: "{{ lb.cross_zone_load_balancing | d(omit) }}"
+    deletion_protection: "{{ lb.deletion_protection | d(omit) }}"
+    ip_address_type: "{{ lb.ip_address_type | d(omit) }}"
+    tags: "{{ lb.tags | d(omit) }}"
+    purge_tags: "{{ lb.purge_tags | d('no') }}"
+    wait: "{{ lb.wait | d('no') }}"
   register: lb_out
 
 - name: Load Balancer | AWS | Register DNS record
@@ -69,12 +69,12 @@
     state: present
     zone: "{{ rec.zone }}"
     record: "{{ rec.record }}"
-    type: "{{ rec.record_type |d('A') }}"
+    type: "{{ rec.record_type | d('A') }}"
     value: "{{ lb_out.dns_name }}."
-    alias: "{{ rec.alias |d('yes') }}"
+    alias: "{{ rec.alias | d('yes') }}"
     alias_hosted_zone_id: "{{ lb_out.canonical_hosted_zone_id }}"
-    private_zone: "{{ rec.private_zone |d(false) }}"
-    overwrite: "{{ rec.overwrite |d(false) }}"
+    private_zone: "{{ rec.private_zone | d(false) }}"
+    overwrite: "{{ rec.overwrite | d(false) }}"
   when: lb.register_dns is defined
   with_items: "{{ lb.register_dns }}"
   loop_control:
@@ -83,17 +83,17 @@
 
 - name: Load Balancer | AWS | Save config | Name
   ansible.builtin.set_fact:
-    cluster_state: "{% set x=cluster_state.loadbalancers.__setitem__(lb.openshift_id+'_name', lb_out.load_balancer_name) %}{{ cluster_state }}"
+    cluster_state: "{% set x = cluster_state.loadbalancers.__setitem__(lb.openshift_id + '_name', lb_out.load_balancer_name) %}{{ cluster_state }}"
   when: lb.openshift_id is defined
 
 - name: Load Balancer | AWS | Save config | Provider's DNS record
   ansible.builtin.set_fact:
-    cluster_state: "{% set x=cluster_state.loadbalancers.__setitem__(lb.openshift_id+'_dns_provider', lb_out.dns_name) %}{{ cluster_state }}"
+    cluster_state: "{% set x = cluster_state.loadbalancers.__setitem__(lb.openshift_id + '_dns_provider', lb_out.dns_name) %}{{ cluster_state }}"
   when: lb.openshift_id is defined
 
 - name: Load Balancer | AWS | Set config | Custom DNS record
   ansible.builtin.set_fact:
-    cluster_state: "{% set x=cluster_state.loadbalancers.__setitem__(lb.openshift_id+'_dns', lb.register_dns[0].record) %}{{ cluster_state }}"
+    cluster_state: "{% set x = cluster_state.loadbalancers.__setitem__(lb.openshift_id + '_dns', lb.register_dns[0].record) %}{{ cluster_state }}"
   when:
     - lb.openshift_id is defined
     - lb.register_dns is defined
@@ -102,9 +102,9 @@
 - name: Load Balancer | AWS | Show resources created
   ansible.builtin.debug:
     var: lb_out
-  when: debug|d(false)
+  when: debug | d(false)
 
 - name: Load Balancer | AWS | Show DNS records created
   ansible.builtin.debug:
     var: rec_out
-  when: debug|d(false)
+  when: debug | d(false)

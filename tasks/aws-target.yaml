@@ -40,7 +40,7 @@
     health_check_port: "{{ tg.health_check_port | d(omit) }}"
     successful_response_codes: "{{ tg.successful_response_codes | d(omit) }}"
     health_check_interval: "{{ tg.health_check_interval | d(omit) }}"
-    health_check_timeout: "{{ tg.health_check_timeout |d(omit) }}"
+    health_check_timeout: "{{ tg.health_check_timeout | d(omit) }}"
     healthy_threshold_count: "{{ tg.healthy_threshold_count | d(omit) }}"
     unhealthy_threshold_count: "{{ tg.unhealthy_threshold_count | d(omit) }}"
     # Targets
