@@ -57,6 +57,9 @@
     preserve_client_ip_enabled: "{{ tg.preserve_client_ip_enabled | d(omit) }}"
     deregistration_delay_timeout: "{{ tg.deregistration_delay_timeout | d(omit) }}"
   register: tg_out
+  until: "tg_out is not failed"
+  retries: 3
+  delay: 5
 
 - name: Target Group | AWS | Show resource created
   ansible.builtin.debug:
