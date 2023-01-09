@@ -63,6 +63,9 @@
     purge_tags: "{{ lb.purge_tags | d('no') }}"
     wait: "{{ lb.wait | d('no') }}"
   register: lb_out
+  until: "lb_out is not failed"
+  retries: 3
+  delay: 5
 
 - name: Load Balancer | AWS | Register DNS record
   community.aws.route53:
@@ -80,6 +83,9 @@
   loop_control:
     loop_var: rec
   register: rec_out
+  until: "rec_out is not failed"
+  retries: 3
+  delay: 5
 
 - name: Load Balancer | AWS | Save config | Name
   ansible.builtin.set_fact:
