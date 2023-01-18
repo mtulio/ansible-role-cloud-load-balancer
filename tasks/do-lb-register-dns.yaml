@@ -1,5 +1,5 @@
 ---
-- name: Resource value was not defined, setting LB recently created
+- name: LB | DO | Register DNS | Set IP
   ansible.builtin.set_fact:
     res_value: "{{ lb_ip }}"
   when: res.value is not defined
@@ -9,21 +9,21 @@
 # It provides indepotency by name, and not value. Additional
 # checks should be done to achieve that.
 
-- name: Retrieve all domain records
+- name: LB | DO | Register DNS | Get RR
   community.digitalocean.digital_ocean_domain_record_info:
     state: present
     domain: "{{ res.domain }}"
   register: reg_dns_zone_records
 
-- name: Show reg_dns_zone_records
+- name: LB | DO | Register DNS | Show RRs
   ansible.builtin.debug:
     var: reg_dns_zone_records
 
-- name: Create empty RR list
+- name: LB | DO | Register DNS | Set list to add
   ansible.builtin.set_fact:
     rr_to_add: []
 
-- name: Discovery RR to add
+- name: LB | DO | Register DNS | Discover value
   ansible.builtin.set_fact:
     rr_to_add: "{{ rr_to_add + [record] }}"
   when: reg_dns_zone_records.data.records | community.general.json_query(q_rr) | length <= 0
@@ -33,11 +33,11 @@
   vars:
     q_rr: "[?name=='{{ record.name }}']"
 
-- name: Show rr_to_add
+- name: LB | DO | Register DNS | Show RRs to add
   ansible.builtin.debug:
     var: rr_to_add
 
-- name: LoadBalancer | DO | Callback Register | DNS | Create RR # noqa: args[module]
+- name: LB | DO | Register DNS | Create RR # noqa: args[module]
   community.digitalocean.digital_ocean_domain_record:
     state: present
     domain: "{{ res.domain }}"
