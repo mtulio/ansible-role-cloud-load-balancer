@@ -58,7 +58,7 @@
     deregistration_delay_timeout: "{{ tg.deregistration_delay_timeout | d(omit) }}"
   register: tg_out
   until: "tg_out is not failed"
-  retries: 3
+  retries: 10
   delay: 5
 
 - name: Target | AWS | Show resource created
