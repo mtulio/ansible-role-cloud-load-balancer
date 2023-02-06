@@ -39,7 +39,7 @@
     subnet_ids: []
   when: lb.subnets_discovery
 
-- name: LB | AWS | Mount the subnetIds from discovered subnets
+- name: LB | AWS | Join discovered subnetIds
   ansible.builtin.set_fact:
     subnet_ids: "{{ subnet_ids | d([]) + [item] }}"
   with_items: "{{ subnet_facts.results | json_query(rt_query) }}"
