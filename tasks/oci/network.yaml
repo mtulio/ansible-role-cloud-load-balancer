@@ -1,0 +1,82 @@
+---
+# Discovery the subnet ID
+
+# https://docs.oracle.com/en-us/iaas/tools/oci-ansible-collection/4.12.0/collections/oracle/oci/oci_network_subnet_facts_module.html#ansible-collections-oracle-oci-oci-network-subnet-facts-module
+- name: OCI | Network | Get SubnetID {{ lb.subnet_name }}
+  oracle.oci.oci_network_subnet_facts:
+    compartment_id: "{{ lb.spec.compartment_id }}"
+    display_name: "{{ lb.subnet_name }}"
+  register: _subnet
+
+- name: OCI | Zone | Check required View results
+  ansible.builtin.assert:
+    that:
+      - _subnet.subnets | length > 0
+    fail_msg: "Subnet lookup by name {{ lb.subnet_name }} didn't return any valud'"
+
+- name: OCI | Network | Set subnet_id
+  ansible.builtin.set_fact:
+    subnet_id: "{{ subnet.id }}"
+  loop: "{{ _subnet.subnets }}"
+  loop_control:
+    loop_var: subnet
+
+- debug: var=subnet_id
+
+- name: OCI | Network | Create LB
+  oracle.oci.oci_network_load_balancer: "{{ lb.spec | combine({
+      \"subnet_id\": subnet_id
+      }) }}"
+  register: _lb
+
+- debug: var=_lb
+
+- name: OCI | Network | Set nlb_id
+  ansible.builtin.set_fact:
+    network_load_balancer_id: "{{ _lb.network_load_balancer.id }}"
+
+- name: OCI | Network | Set nlb_public_ip
+  ansible.builtin.set_fact:
+    lb_public_ip: "{{ _lb.network_load_balancer.ip_addresses[0].ip_address }}"
+  #   lb_public_ip: "{{ _lb.network_load_balancer.ip_addresses | json_query(rt_query) }}"
+  # vars:
+  #   rt_query: "[?is_public==true].ip_address"
+
+- name: OCI | Network | Set nlb_private_ip
+  ansible.builtin.set_fact:
+    lb_private_ip: "{{ _lb.network_load_balancer.ip_addresses[1].ip_address }}"
+  #   lb_private_ip: "{{ _lb.network_load_balancer.ip_addresses | json_query(rt_query) }}"
+  # vars:
+  #   rt_query: "[?is_public==false].ip_address"
+
+- debug: var=lb_public_ip
+- debug: var=lb_private_ip
+
+# Backend
+- name: OCI | Network | Create backend_set
+  oracle.oci.oci_network_load_balancer_backend_set: "{{ backend.spec | combine({
+      \"network_load_balancer_id\": network_load_balancer_id
+      }) }}"
+  loop: "{{ lb.backend_set }}"
+  loop_control:
+    loop_var: backend
+  register: _bset
+
+- debug: var=_bset
+
+- name: OCI | Network | Create listener
+  oracle.oci.oci_network_load_balancer_listener: "{{ listener.spec | combine({
+      \"network_load_balancer_id\": network_load_balancer_id
+      }) }}"
+  register: _listener
+  loop: "{{ lb.listeners }}"
+  loop_control:
+    loop_var: listener
+
+- debug: var=_listerner
+
+- name: OCI | Network | Callback {{ cb.name }}
+  ansible.builtin.include_tasks: "./cb_{{ cb.name }}.yaml"
+  loop: "{{ lb.callbacks }}"
+  loop_control:
+    loop_var: cb
