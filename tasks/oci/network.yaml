@@ -21,13 +21,28 @@
   loop_control:
     loop_var: subnet
 
+- name: OCI | Network | Set nsg_ids
+  oracle.oci.oci_network_security_group_facts:
+    compartment_id: "{{ lb.spec.compartment_id }}"
+    display_name: "{{ lb.nsg_name }}"
+  register: _nsgs
+
+- name: OCI | Network | Set extra args
+  ansible.builtin.set_fact:
+    _nlb_extra_args:
+      subnet_id: "{{ subnet_id }}"
+
 - debug: var=subnet_id
+- debug: var=network_security_group_ids
 
 - name: OCI | Network | Create LB
-  oracle.oci.oci_network_load_balancer: "{{ lb.spec | combine({
-      \"subnet_id\": subnet_id
-      }) }}"
+  oracle.oci.oci_network_load_balancer: "{{ lb.spec | combine(_nlb_extra_args) }}"
   register: _lb
+
+- name: OCI | Network | Add/Update NSG to LB
+  oracle.oci.oci_network_load_balancer_network_security_groups_update:
+    network_load_balancer_id: "{{ _lb.network_load_balancer.id }}"
+    network_security_group_ids: "{{ [_nsgs.network_security_groups[0].id] }}"
 
 - debug: var=_lb
 
