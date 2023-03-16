@@ -1,22 +1,11 @@
 ---
 
-- name: Setup Load Balancers by provider
+- name: OCI | Setup Load Balancers by type
   ansible.builtin.include_tasks: "{{ lb.provider }}/{{ lb.type }}.yaml"
   with_items: "{{ cloud_loadbalancers | d([]) }}"
   loop_control:
     loop_var: lb
 
-
-# - name: Setup Load Balancers by provider
-#   ansible.builtin.include_tasks: "{{ lb.provider }}-listener.yaml"
-#   with_items: "{{ cloud_loadbalancers | d([]) }}"
-#   loop_control:
-#     loop_var: lb
-
-# - name: Setup Load Balancer Targets by provider
-#   ansible.builtin.include_tasks: "{{ tg.provider }}-backend.yaml"
-#   with_items: "{{ cloud_loadbalancer_targets | d([]) }}"
-#   loop_control:
-#     loop_var: tg
-
-
+- name: OCI | Show Global State
+  ansible.builtin.debug:
+    var: cloud_loadbalancers_state
