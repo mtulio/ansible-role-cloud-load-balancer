@@ -87,24 +87,6 @@
   retries: 3
   delay: 5
 
-- name: LB | AWS | Save config | Name
-  ansible.builtin.set_fact:
-    cluster_state: "{% set x = cluster_state.loadbalancers.__setitem__(lb.openshift_id + '_name', lb_out.load_balancer_name) %}{{ cluster_state }}"
-  when: lb.openshift_id is defined
-
-- name: LB | AWS | Save config | Provider's DNS record
-  ansible.builtin.set_fact:
-    cluster_state: "{% set x = cluster_state.loadbalancers.__setitem__(lb.openshift_id + '_dns_provider', lb_out.dns_name) %}{{ cluster_state }}"
-  when: lb.openshift_id is defined
-
-- name: LB | AWS | Set config | Custom DNS record
-  ansible.builtin.set_fact:
-    cluster_state: "{% set x = cluster_state.loadbalancers.__setitem__(lb.openshift_id + '_dns', lb.register_dns[0].record) %}{{ cluster_state }}"
-  when:
-    - lb.openshift_id is defined
-    - lb.register_dns is defined
-    - lb.register_dns | length > 0
-
 - name: LB | AWS | Show resources created
   ansible.builtin.debug:
     var: lb_out
@@ -114,3 +96,11 @@
   ansible.builtin.debug:
     var: rec_out
   when: debug | d(false)
+
+- name: AWS | Update Global states
+  ansible.builtin.set_fact:
+    cloud_loadbalancers_state: "{{ cloud_loadbalancers_state | d([]) + [_lb_data] }}"
+  vars:
+    _lb_data:
+      state: "{{ lb_out }}"
+      dns_records: "{{ rec_out }}"
