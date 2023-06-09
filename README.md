@@ -17,6 +17,7 @@ Providers
 | -- | -- |
 | AWS | NLB |
 | DigitalOcean | Default |
+| Oracle Cloud | Network |
 
 Requirements
 ------------
