@@ -25,6 +25,7 @@
   loop: "{{ _subnet.subnets }}"
   loop_control:
     loop_var: subnet
+  no_log: true
 
 - name: OCI | Network | Set nsg_ids
   oracle.oci.oci_network_security_group_facts:
