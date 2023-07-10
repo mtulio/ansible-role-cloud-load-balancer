@@ -1,0 +1,12 @@
+---
+
+- name: OCI | Setup Load Balancers by type
+  ansible.builtin.include_tasks: "{{ lb.provider }}/{{ lb.type }}.yaml"
+  with_items: "{{ cloud_loadbalancers | d([]) }}"
+  loop_control:
+    loop_var: lb
+
+- name: OCI | Show Global State
+  ansible.builtin.debug:
+    var: cloud_loadbalancers_state
+  when: debug | d(false)

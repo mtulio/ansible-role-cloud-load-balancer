@@ -64,7 +64,7 @@
 - name: Target | AWS | Show resource created
   ansible.builtin.debug:
     var: tg_out
-  when: debug|d(false)
+  when: debug | d(false)
 
 - name: Target | AWS | Discovery and register EC2 targets
   ansible.builtin.include_tasks: aws-tg-register-ec2.yaml

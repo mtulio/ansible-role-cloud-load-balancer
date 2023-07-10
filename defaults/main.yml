@@ -1,3 +1,5 @@
 ---
 # defaults file for cloud_load_balancer
+# Default provider
+cloud_load_balancer_provider: aws
 cloud_loadbalancers: []

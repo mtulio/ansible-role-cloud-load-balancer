@@ -1,0 +1,70 @@
+---
+# https://docs.oracle.com/en-us/iaas/tools/oci-ansible-collection/4.12.0/collections/oracle/oci/oci_dns_zone_records_module.html#ansible-collections-oracle-oci-oci-dns-zone-records-module
+
+- name: OCI | Network | Callback | Set public IP
+  ansible.builtin.set_fact:
+    rr_ip: "{{ lb_public_ip }}"
+  when: cb.rr_ip == 'public'
+
+- name: OCI | Network | Callback | Set private IP
+  ansible.builtin.set_fact:
+    rr_ip: "{{ lb_private_ip }}"
+  when: cb.rr_ip == 'private'
+
+- name: OCI | Network | Callback | DNS RR | Public
+  when: cb.spec.scope == 'GLOBAL'
+  oracle.oci.oci_dns_zone_records:
+    zone_name_or_id: "{{ cb.spec.zone_name_or_id }}"
+    compartment_id: "{{ cb.spec.compartment_id }}"
+    patch_items: "{{ [rr | combine({\"rdata\": rr_ip})] }}"
+  loop: "{{ cb.spec.patch_items }}"
+  loop_control:
+    loop_var: rr
+  register: _rr
+
+# Only domain_type=cluster_domain is supported
+- name: OCI | Network | Callback | DNS RR | Private
+  when: cb.spec.scope == 'PRIVATE'
+  block:
+  - name: OCI | Network | Callback RR | Views
+    oracle.oci.oci_dns_view_facts:
+      compartment_id: "{{ lb.spec.compartment_id }}"
+      display_name: "{{ cb.view_name }}"
+    register: _views
+
+  - name: OCI | Network | Callback RR | Check required View results
+    ansible.builtin.assert:
+      that:
+        - _views.views | length > 0
+      fail_msg: "View with VCN Name '{{ cb.view_name }}' was not found to setup DNS Domain '{{ cb.spec.zone_name_or_id }}'"
+
+  - name: OCI | Network | Callback RR | Set View ID
+    ansible.builtin.set_fact:
+      view_id: "{{ view.id }}"
+    loop: "{{ _views.views }}"
+    loop_control:
+      loop_var: view
+
+  - name:  OCI | Network | Callback RR | Update DNS
+    oracle.oci.oci_dns_zone_records:
+    #  "{{ cb.spec | combine({
+    #     \"network_load_balancer_id\": network_load_balancer_id
+    #     }) }}"
+      zone_name_or_id: "{{ cb.spec.zone_name_or_id }}"
+      compartment_id: "{{ cb.spec.compartment_id }}"
+      patch_items: "{{ [rr | combine({\"rdata\": rr_ip})] }}"
+      view_id: "{{ view_id }}"
+      scope: "{{ cb.spec.scope }}"
+    # when: cb.rr_ip == 'public'
+    loop: "{{ cb.spec.patch_items }}"
+    loop_control:
+      loop_var: rr
+    register: _rr
+
+- name:  OCI | Network | Callback RR | Set state
+  ansible.builtin.set_fact:
+    _callback_dns_records: "{{ _callback_dns_records + [_rr_data] }}"
+  vars:
+    _rr_data:
+      - records: "{{ cb.spec.patch_items }}"
+        address: "{{ rr_ip }}"
